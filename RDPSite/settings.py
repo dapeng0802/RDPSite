@@ -1,4 +1,6 @@
+#--coding:utf-8--
 # Django settings for RDPSite project.
+import RDPSite
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -111,6 +113,14 @@ TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
+    'RDPSite/templates',
+)
+
+TEMPLATE_CONTEXT_PROCESSORS = ( # F2E中有current_user对象和request对象,这里设置可在模板中使用RquestContext
+    'django.contrib.auth.context_processors.auth', # user对象等等
+    'django.core.context_processors.request', # request对象等等
+    'django.core.context_processors.static', # 在模板中使用{{ STATIC_URL }}获取静态文件路径
+    'RDPSite.context_processors.custom_proc', # 自定义模板上下文处理器
 )
 
 INSTALLED_APPS = (
@@ -121,9 +131,11 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # Uncomment the next line to enable the admin:
-    # 'django.contrib.admin',
+    'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
+    'django.contrib.sitemaps', # Django sitemap framework
+    'RDPSite',
 )
 
 # A sample logging configuration. The only tangible logging
