@@ -113,7 +113,7 @@ TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    'RDPSite/templates',
+    #'RDPSite/templates',
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = ( # F2E中有current_user对象和request对象,这里设置可在模板中使用RquestContext
