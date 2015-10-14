@@ -4,6 +4,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from PIL.ImageFont import truetype
 from django.db.models.sql.query import Query
+from MySQLdb.constants.REFRESH import STATUS
 
 # 工具
 class Pages(object):
@@ -180,3 +181,85 @@ class Topic(models.Model):
     '''
     话题表，定义了论坛帖子的基本单位
     '''
+    title = models.CharField(max_length=200, null=True, blank=True)
+    content = NormalTextField(null=True, blank=True)
+    status = models.IntegerField(null=True, blank=True)
+    hits = models.IntegerField(null=True, blank=True)
+    created = models.DateTimeField(null=True, blank=True)
+    updated = models.DateTimeField(null=True, blank=True)
+    node = models.ForeignKey(Node, null=True, blank=True)
+    author = models.ForeignKey(SiteUser, related_name='topic_author', null=True, blank=True)
+    reply_count = models.IntegerField(null=True, blank=True)
+    last_replied_by = models.ForeignKey(SiteUser, related_name='topic_last', null=True, blank=True)
+    last_replied_time = models.DateTimeField(null=True, blank=True)
+    up_vote = models.IntegerField(null=True, blank=True)
+    down_vote = models.IntegerField(null=True, blank=True)
+    last_touched = models.DateTimeField(null=True, blank=True)
+    
+    objects = TopicManager()
+
+class Reply(models.Model):
+    '''
+    话题的回复
+    '''
+    topic = models.ForeignKey(Topic, null=True, blank=True)
+    author = models.ForeignKey(SiteUser, related_name='reply_author', null=True, blank=True)
+    content = NormalTextField(null=True, blank=True)
+    created = models.DateTimeField(null=True, blank=True)
+    updated = models.DateTimeField(null=True, blank=True)
+    up_vote = models.IntegerField(null=True, blank=True)
+    down_vote = models.IntegerField(null=True, blank=True)
+    
+    objects = ReplyManager()
+
+class Favorite(models.Model):
+    '''
+    用户收藏的话题或回复
+    '''
+    owner_user = models.ForeignKey(SiteUser, related_name='fav_user', null=True, blank=True)
+    involved_type = models.IntegerField(null=True, blank=True)
+    involved_topic = models.ForeignKey(Topic, related_name='fav_topic', null=True, blank=True)
+    involved_reply = models.ForeignKey(Reply, related_name='fav_reply', null=True, blank=True)
+    created = models.DateTimeField(null=True, blank=True)
+    
+    objects = FavoriteManager()
+    
+class Notification(models.Model):
+    '''
+    通知消息
+    '''
+    content = NormalTextField(null=True, blank=True)
+    status = models.IntegerField(null=True, blank=True)
+    involved_type = models.IntegerField(null=True, blank=True)
+    involved_user = models.ForeignKey(SiteUser, related_name='notify_user', null=True, blank=True)
+    involved_topic = models.ForeignKey(Topic, related_name='notify_topic', null=True, blank=True)
+    involved_reply = models.ForeignKey(Reply, related_name='notify_reply', null=True, blank=True)
+    trigger_user = models.ForeignKey(SiteUser, related_name='notify_trigger', null=True, blank=True)
+    occurence_time = models.DateTimeField(null=True, blank=True)
+    
+    objects = NotificationManager()
+
+class Transaction(models.Model):
+    '''
+    交易
+    '''
+    type = models.IntegerField(null=True, blank=True)
+    reward = models.IntegerField(null=True, blank=True)
+    user = models.ForeignKey(SiteUser, related_name='trans_user' ,null=True, blank=True)
+    current_balance = models.IntegerField(null=True, blank=True)
+    involved_user = models.ForeignKey(SiteUser, related_name='trans_involved', null=True, blank=True)
+    involved_topic = models.ForeignKey(Topic, related_name='trans_topic', null=True, blank=True)
+    involved_reply = models.ForeignKey(Reply, related_name='trans_reply', null=True, blank=True)
+    occurence_time = models.DateTimeField(null=True, blank=True)
+
+class Vote(models.Model):
+    '''
+    投票
+    '''
+    status = models.IntegerField(null=True, blank=True)
+    involved_type = models.IntegerField(null=True, blank=True)
+    involved_user = models.ForeignKey(SiteUser, related_name='vote_user', null=True, blank=True)
+    involved_topic = models.ForeignKey(Topic, related_name='vote_topic', null=True, blank=True)
+    involved_reply = models.ForeignKey(Reply, related_name='vote_reply', null=True, blank=True)
+    trigger_user = models.ForeignKey(SiteUser, related_name='vote_trigger', null=True, blank=True)
+    occurence_time = models.DateTimeField(null=True, blank=True)
