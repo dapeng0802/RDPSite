@@ -50,3 +50,17 @@ class RegisterForm(forms.ModelForm):
             raise forms.ValidationError(u'所填邮箱已被注册')
         except SiteUser.DoesNotExist:
             return email
+    
+    def clean_password(self):
+        password1 = self.cleaned_data.get['password']
+        password2 = self.cleaned_data.get['password_confirm']
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError(u'两次输入的密码不一致')
+        return password2
+    
+    def save(self, commit=True):
+        user = super(RegisterForm, self).save(commit=False)
+        user.set_password(self.cleaned_data['password'])
+        if commit:
+            user.save()
+        return user

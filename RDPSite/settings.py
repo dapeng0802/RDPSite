@@ -173,3 +173,10 @@ LOGIN_URL = '/login/'
 
 # 注册用户保留关键字，非Django设置
 RESERVED = ["user", "topic", "home", "setting", "forgot", "login", "logout", "register", "admin"]
+
+# 发送邮件设置
+EMAIL_HOST = 'smtp.126.com'
+EMAIL_PORT = 25
+EMAIL_HOST_USER= '*********'
+EMAIL_HOST_PASSWORD= '******'
+DEFAULT_FROM_EMAIL = '*********@126.com'
