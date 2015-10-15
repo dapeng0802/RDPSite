@@ -1,5 +1,5 @@
 from django.conf.urls import patterns, include, url
-from views import common, topic
+from views import common, topic, user
 
 # Uncomment the next two lines to enable the admin:
 # from django.contrib import admin
@@ -16,4 +16,5 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the admin:
     # url(r'^admin/', include(admin.site.urls)),
     url(r'^$', common.splitter, {'GET': topic.get_index}),
+    url(r'^register/$', common.splitter, {'GET': user.get_register, 'POST': user.post_register})
 )

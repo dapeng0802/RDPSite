@@ -1,6 +1,7 @@
 #--coding:utf-8--
 # Django settings for RDPSite project.
 import RDPSite
+from django.conf.global_settings import LOGIN_URL
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -166,3 +167,9 @@ LOGGING = {
         },
     }
 }
+
+# 设置默认登录url
+LOGIN_URL = '/login/'
+
+# 注册用户保留关键字，非Django设置
+RESERVED = ["user", "topic", "home", "setting", "forgot", "login", "logout", "register", "admin"]
