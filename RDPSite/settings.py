@@ -177,6 +177,6 @@ RESERVED = ["user", "topic", "home", "setting", "forgot", "login", "logout", "re
 # 发送邮件设置
 EMAIL_HOST = 'smtp.126.com'
 EMAIL_PORT = 25
-EMAIL_HOST_USER= '*********'
-EMAIL_HOST_PASSWORD= '******'
-DEFAULT_FROM_EMAIL = '*********@126.com'
+EMAIL_HOST_USER= 'dapeng0802'
+EMAIL_HOST_PASSWORD= '4rfvBGT%'
+DEFAULT_FROM_EMAIL = 'dapeng0802@126.com'

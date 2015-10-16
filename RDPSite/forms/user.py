@@ -43,7 +43,7 @@ class RegisterForm(forms.ModelForm):
             if username in settings.RESERVED:
                 raise forms.ValidationError(u'所填用户名为系统保留关键字，不可用')
             return username
-    def clean_emial(self):
+    def clean_email(self):
         email = self.cleaned_data['email']
         try:
             SiteUser.objects.get(email=email)
@@ -51,9 +51,9 @@ class RegisterForm(forms.ModelForm):
         except SiteUser.DoesNotExist:
             return email
     
-    def clean_password(self):
-        password1 = self.cleaned_data.get['password']
-        password2 = self.cleaned_data.get['password_confirm']
+    def clean_password_confirm(self):
+        password1 = self.cleaned_data['password']
+        password2 = self.cleaned_data['password_confirm']
         if password1 and password2 and password1 != password2:
             raise forms.ValidationError(u'两次输入的密码不一致')
         return password2

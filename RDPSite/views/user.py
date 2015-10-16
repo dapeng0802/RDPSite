@@ -8,7 +8,7 @@ from django.conf import settings
 from common import sendmail
 
 def get_register(request, **kwargs):
-    auth.logout()
+    auth.logout(request)
     return render_to_response('user/register.html', kwargs, context_instance=RequestContext(request))
 
 def post_register(request):
@@ -21,7 +21,8 @@ def post_register(request):
     if user:
         # 注册成功，发送邮件到用户邮箱
         mail_title = u'RDPSite 注册成功通知'
-        mail_content = loader.get_template('user/register_mail.html')
+        #mail_content = loader.get_template('user/register_mail.html')
+        mail_content = loader.render_to_string('user/register_mail.html',{})
         sendmail(mail_title, mail_content, user.email)
     return redirect(settings.LOGIN_URL)
     
