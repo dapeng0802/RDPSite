@@ -180,3 +180,9 @@ EMAIL_PORT = 25
 EMAIL_HOST_USER= 'dapeng0802'
 EMAIL_HOST_PASSWORD= '4rfvBGT%'
 DEFAULT_FROM_EMAIL = 'dapeng0802@126.com'
+
+# 自定义User类
+AUTH_USER_MODEL = 'RDPSite.SiteUser'
+
+# 用户认证BackEnds
+AUTHENTICATION_BACKENDS = ('RDPSite.backends.EmailAuthBackend',)

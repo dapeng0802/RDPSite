@@ -3,7 +3,7 @@
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext, Context, loader
 from django.contrib import auth
-from RDPSite.forms.user import RegisterForm
+from RDPSite.forms.user import RegisterForm, LoginForm, error_messages
 from django.conf import settings
 from common import sendmail
 
@@ -25,4 +25,24 @@ def post_register(request):
         mail_content = loader.render_to_string('user/register_mail.html',{})
         sendmail(mail_title, mail_content, user.email)
     return redirect(settings.LOGIN_URL)
+
+def get_login(request, **kwargs):
+    auth.logout(request)
+    return render_to_response('user/login.html', kwargs, context_instance=RequestContext(request))
+
+def post_login(request):
+    form = LoginForm(request.POST)
+    if not form.is_valid():
+        return get_login(request, errors=form.errors)
     
+    user = form.get_user()
+    auth.login(request, user)
+    
+    if user.is_staff:
+        return redirect(request.REQUEST.get('next', '/manage/admin/'))
+    
+    return redirect(request.REQUEST.get('next', '/'))
+
+def get_logout(request):
+    auth.logout(request)
+    return redirect(request.REQUEST.get('next', '/'))

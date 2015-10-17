@@ -16,5 +16,7 @@ urlpatterns = patterns('',
     # Uncomment the next line to enable the admin:
     # url(r'^admin/', include(admin.site.urls)),
     url(r'^$', common.splitter, {'GET': topic.get_index}),
-    url(r'^register/$', common.splitter, {'GET': user.get_register, 'POST': user.post_register})
+    url(r'^register/$', common.splitter, {'GET': user.get_register, 'POST': user.post_register}),
+    url(r'^login/$', common.splitter, {'GET': user.get_login, 'POST': user.post_login}),
+    url(r'^logout/$', common.splitter, {'GET': user.get_logout}),
 )

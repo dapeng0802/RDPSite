@@ -3,6 +3,7 @@
 from django import forms
 from RDPSite.models import SiteUser
 from django.conf import settings 
+from django.contrib.auth import authenticate
 
 error_messages = {
     'username': {
@@ -64,3 +65,26 @@ class RegisterForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+    
+class LoginForm(forms.Form):
+    email = forms.EmailField(min_length=4, max_length=64, error_messages=error_messages.get('email'))
+    password = forms.CharField(min_length=6, max_length=64, error_messages=error_messages.get('password'))
+    
+    def __init__(self, *args, **kwargs):
+        self.user_cache = None
+        super(LoginForm, self).__init__(*args, **kwargs)
+        
+    def clean(self):
+        email = self.cleaned_data.get('email')
+        password = self.cleaned_data.get('password')
+        
+        if email and password:
+            self.user_cache = authenticate(username=email, password=password)
+            if self.user_cache is None:
+                raise forms.ValidationError(u'邮箱或密码不正确')
+            elif not self.user_cache.is_active:
+                raise forms.ValidationError(u'用户已被锁定，请联系管理员解锁')
+        return self.cleaned_data
+    
+    def get_user(self):
+        return self.user_cache
