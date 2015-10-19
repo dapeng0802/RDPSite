@@ -19,5 +19,6 @@ urlpatterns = patterns('',
     url(r'^register/$', common.splitter, {'GET': user.get_register, 'POST': user.post_register}),
     url(r'^login/$', common.splitter, {'GET': user.get_login, 'POST': user.post_login}),
     url(r'^logout/$', common.splitter, {'GET': user.get_logout}),
-    url(r'^forgot/$', common.splitter, {'GET': user.get_forgotpassword, 'POST': user.post_forgotpassword})
+    url(r'^forgot/$', common.splitter, {'GET': user.get_forgotpassword, 'POST': user.post_forgotpassword}),
+    url(r'^setting/$', common.splitter, {'GET': user.get_setting, 'POST': user.post_setting}),
 )

@@ -1,13 +1,14 @@
 #--coding:utf-8--
 
-import os, uuid
+import os, uuid, copy
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext, Context, loader
 from django.contrib import auth
-from RDPSite.forms.user import RegisterForm, LoginForm, ForgotPasswordForm
+from RDPSite.forms.user import RegisterForm, LoginForm, ForgotPasswordForm, SettingForm
 from django.conf import settings
 from common import sendmail
 from django.utils import timezone
+from django.contrib.auth.decorators import login_required
 
 def get_register(request, **kwargs):
     auth.logout(request)
@@ -72,3 +73,23 @@ def post_forgotpassword(request):
     sendmail(mail_title, mail_content, user.email)
     
     return get_forgotpassword(request, success_message=u'新密码已发送至您的注册邮箱')
+
+@login_required
+def get_setting(request, **kwargs):
+    return render_to_response('user/setting.html', kwargs, context_instance=RequestContext(request))
+
+@login_required
+def post_setting(request):
+    form = SettingForm(request.POST)
+    if not form.is_valid():
+        return get_setting(request, errors=form.errors)
+    
+    user = request.user
+    cd = copy.copy(form.cleaned_data)
+    cd.pop('username')
+    cd.pop('email')
+    for k, v in cd.iteritems():
+        setattr(user, k, v)
+    user.updated = timezone.now()
+    user.save()
+    return get_setting(request, success_message=u'用户基本资料更新成功')

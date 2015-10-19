@@ -110,3 +110,16 @@ class ForgotPasswordForm(forms.Form):
     
     def get_user(self):
         return self.user_cache
+
+class SettingForm(forms.Form):
+    username = forms.CharField() # readonly
+    email = forms.EmailField() # readonly
+    nickname = forms.CharField(min_length=3, max_length=12, required=False, error_messages={'min_length': u'昵称过短（3-12个字符）', 'max_length': u'昵称过长（3-12个字符）'})
+    signature = forms.CharField(required=False)
+    location = forms.CharField(required=False)
+    website = forms.URLField(required=False, error_messages={'invalid': u'请填写合法的URL地址',})
+    company = forms.CharField(required=False)
+    github = forms.CharField(required=False) 
+    weibo = forms.CharField(required=False)
+    douban = forms.CharField(required=False)
+    self_intro = forms.CharField(required=False)
