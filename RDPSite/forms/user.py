@@ -88,3 +88,25 @@ class LoginForm(forms.Form):
     
     def get_user(self):
         return self.user_cache
+    
+class ForgotPasswordForm(forms.Form):
+    username = forms.RegexField(min_length=3, max_length=12, regex=r'^[a-zA-z][a-zA-Z0-9_]*$', error_message=error_messages.get('username'))
+    email = forms.EmailField(min_length=4, max_length=64, error_messages=error_messages.get('email'))
+    
+    def __init__(self, *args, **kwargs):
+        self.user_cache = None
+        super(ForgotPasswordForm, self).__init__(*args, **kwargs)
+    
+    def clean(self):
+        username = self.cleaned_data.get('username')
+        email = self.cleaned_data.get('email')
+        
+        if username and email:
+            try:
+                self.user_cache = SiteUser.objects.get(username=username, email=email)
+            except SiteUser.DoesNotExist:
+                raise forms.ValidationError(u'所填用户名和邮箱有误')
+        return self.cleaned_data
+    
+    def get_user(self):
+        return self.user_cache
