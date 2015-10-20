@@ -9,6 +9,7 @@ from django.conf import settings
 from common import sendmail
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from PIL import Image
 
 def get_register(request, **kwargs):
     auth.logout(request)
@@ -93,3 +94,35 @@ def post_setting(request):
     user.updated = timezone.now()
     user.save()
     return get_setting(request, success_message=u'用户基本资料更新成功')
+
+@login_required
+def get_setting_avatar(request, **kwargs):
+    return render_to_response('user/setting_avatar.html', kwargs, context_instance=RequestContext(request))
+
+@login_required
+def post_setting_avatar(request):
+    if not 'avatar' in request.FILES:
+        errors = {'invalid_avatar', [u'请先选择要上传的头像'],}
+        return get_setting_avatar(request, errors=errors)
+    
+    user = request.user
+    avatar_name = '%s' % uuid.uuid5(uuid.NAMESPACE_DNS, str(user.id))
+    avatar = Image.open(request.FILES['avatar'])
+    avatar_w, avatar_h = avatar.size
+    avatar_border = avatar_w if avatar_w < avatar_h else avatar_h
+    avatar_copy_region = (0, 0, avatar_border, avatar_border)
+    avatar = avatar.crop(avatar_copy_region)
+    
+    avatar_96x96 = avatar.resize((96, 96), Image.ANTIALIAS)
+    avatar_48x48 = avatar.resize((48, 48), Image.ANTIALIAS)
+    avatar_32x32 = avatar.resize((32, 32), Image.ANTIALIAS)
+    path = os.path.dirname(__file__)
+    avatar_96x96.save(os.path.join(path, '../static/avatar/b_%s.png' % avatar_name), 'PNG')
+    avatar_48x48.save(os.path.join(path, '../static/avatar/m_%s.png' % avatar_name), 'PNG')
+    avatar_32x32.save(os.path.join(path, '../static/avatar/s_%s.png' % avatar_name), 'PNG')
+    user.avatar = '%s.png' % avatar_name
+    user.updated = timezone.now()
+    user.save()
+    return get_setting_avatar(request)
+    
+    

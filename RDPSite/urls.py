@@ -21,4 +21,5 @@ urlpatterns = patterns('',
     url(r'^logout/$', common.splitter, {'GET': user.get_logout}),
     url(r'^forgot/$', common.splitter, {'GET': user.get_forgotpassword, 'POST': user.post_forgotpassword}),
     url(r'^setting/$', common.splitter, {'GET': user.get_setting, 'POST': user.post_setting}),
+    url(r'^setting/avatar/$', common.splitter, {'GET': user.get_setting_avatar, 'POST': user.post_setting_avatar}),
 )
