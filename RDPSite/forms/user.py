@@ -123,3 +123,27 @@ class SettingForm(forms.Form):
     weibo = forms.CharField(required=False)
     douban = forms.CharField(required=False)
     self_intro = forms.CharField(required=False)
+
+class SettingPasswordForm(forms.Form):
+    password_old = forms.CharField(min_length=6, max_length=64, error_messages=error_messages.get('password'))
+    password = forms.CharField(min_length=6, max_length=64, error_messages=error_messages.get('password'))
+    password_confirm = forms.CharField(required=False)
+    
+    def __init__(self, request):
+        self.user = request.user
+        super(SettingPasswordForm, self).__init__(request.POST)
+        
+    def clean(self):
+        password_old = self.cleaned_data.get('password_old')
+        password = self.cleaned_data.get('password')
+        password_confirm = self.cleaned_data.get('password_confirm')
+        
+        if not (password and self.user.check_password(password_old)):
+            raise forms.ValidationError(u'当前输入的旧密码错误')
+        
+        if password and password_confirm and password != password_confirm:
+            raise forms.ValidationError(u'两次输入的新密码不一致')
+        if not (password and password_confirm):
+            raise forms.ValidationError(u'密码不能为空!!!')
+        
+        return self.cleaned_data

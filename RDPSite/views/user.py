@@ -4,7 +4,7 @@ import os, uuid, copy
 from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext, Context, loader
 from django.contrib import auth
-from RDPSite.forms.user import RegisterForm, LoginForm, ForgotPasswordForm, SettingForm
+from RDPSite.forms.user import RegisterForm, LoginForm, ForgotPasswordForm, SettingForm, SettingPasswordForm
 from django.conf import settings
 from common import sendmail
 from django.utils import timezone
@@ -125,4 +125,20 @@ def post_setting_avatar(request):
     user.save()
     return get_setting_avatar(request)
     
+@login_required
+def get_setting_password(request, **kwargs):
+    return render_to_response('user/setting_password.html', kwargs, context_instance=RequestContext(request))
+
+@login_required
+def post_setting_password(request):
+    form = SettingPasswordForm(request)
     
+    if not form.is_valid():
+        return get_setting_password(request, errors=form.errors)
+    
+    user = form.user
+    password = form.cleaned_data.get('password')
+    user.set_password(password)
+    user.updated = timezone.now()
+    user.save()
+    return get_setting_password(request, success_message=u'您的用户密码已更新')    
