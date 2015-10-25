@@ -9,7 +9,7 @@ def get_index(request):
     user = request.user
     if user.is_authenticated():
         counter = {
-            'topic': user.topic_author.all().count(),
+            'topics': user.topic_author.all().count(),
             'replies': user.reply_author.all().count(),
             'favorites': user.fav_user.all().count()
         }
@@ -147,3 +147,18 @@ def get_user_favorites(request, uid):
     favorites, favorite_page = Favorite.objects.get_user_all_favorites(user_info.id, current_page=current_page)
     avtive_page = 'topic'
     return render_to_response('topic/user_favorites.html', locals(), context_instance=RequestContext(request))
+
+def get_members(request):
+    user = request.user
+    if user.is_authenticated():
+        counter = {
+            'topics': user.topic_author.all().count(),
+            'replies': user.reply_author.all().count(),
+            'favorites': user.fav_user.all().count()
+        }
+        notification_count = user.notify_user.filter(status=0).count()
+    
+    members = SiteUser.objects.all().order_by('-id')[:49]
+    active_members = SiteUser.objects.all().order_by('-last_login')[:49]
+    active_page = 'members'
+    return render_to_response('topic/members.html', locals(), context_instance=RequestContext(request))
