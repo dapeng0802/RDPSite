@@ -31,4 +31,5 @@ urlpatterns = patterns('',
     url(r'^u/(.*)/favorites', common.splitter, {'GET': topic.get_user_favorites}),
     url(r'^u/(.*)/$', common.splitter, {'GET': topic.get_profile}),
     url(r'^members/$', common.splitter, {'GET': topic.get_members}),
+    url(r'^node/(.*)/$', common.splitter, {'GET': topic.get_node_topics}),
 )

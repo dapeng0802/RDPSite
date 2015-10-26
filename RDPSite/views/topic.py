@@ -1,7 +1,7 @@
 #--coding:utf-8--
 
 from django.http import Http404, HttpResponse
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from RDPSite.models import SiteUser, Plane, Node, Topic, Reply, Favorite, Notification, Transaction, Vote 
 
@@ -162,3 +162,24 @@ def get_members(request):
     active_members = SiteUser.objects.all().order_by('-last_login')[:49]
     active_page = 'members'
     return render_to_response('topic/members.html', locals(), context_instance=RequestContext(request))
+
+def get_node_topics(request, slug):
+    node = get_object_or_404(Node, slug=slug)
+    
+    user = request.user
+    if user.is_authenticated():
+        counter = {
+            'topics': user.topic_author.all().count(),
+            'replies': user.reply_author.all().count(),
+            'favorites': user.fav_user.all().count()
+        }
+        notification_count = user.notify_user.filter(status=0).count()
+    
+    try:
+        current_page = int(request.GET.get('p', '1'))
+    except ValueError:
+        current_page = 1
+    
+    topics, topic_page = Topic.objects.get_all_topics_by_slug(current_page=current_page, node_slug=slug)
+    active_page = 'topic'
+    return render_to_response('topic/node_topics.html', locals(), context_instance=RequestContext(request))

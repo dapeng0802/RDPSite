@@ -58,7 +58,7 @@ class TopicManager(models.Manager):
         return query, page
     
     def get_all_topics_by_slug(self, num=36, current_page=1, node_slug=None):
-        count = self.get_query_set().filter(node__slug=node_slug).count
+        count = self.get_query_set().filter(node__slug=node_slug).count()
         page = Pages(count, current_page, num)
         query = self.get_query_set().select_related('node', 'author', 'last_replied_by').\
             filter(node__slug=node_slug).order_by('-last_touched', '-created', '-last_replied_time', '-id')[page.start:page.end]
