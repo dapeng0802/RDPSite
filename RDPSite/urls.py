@@ -32,4 +32,6 @@ urlpatterns = patterns('',
     url(r'^u/(.*)/$', common.splitter, {'GET': topic.get_profile}),
     url(r'^members/$', common.splitter, {'GET': topic.get_members}),
     url(r'^node/(.*)/$', common.splitter, {'GET': topic.get_node_topics}),
+    url(r'^t/create/(.*)/$', common.splitter, {'GET': topic.get_create, 'POST': topic.post_create}),
+    url(r'^t/(\d+)/$', common.splitter, {'GET': topic.get_view, 'POST': topic.post_view}),
 )

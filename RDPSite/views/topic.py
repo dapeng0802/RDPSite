@@ -1,9 +1,14 @@
-#--coding:utf-8--
+#--coding=utf-8--
 
 from django.http import Http404, HttpResponse
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
-from RDPSite.models import SiteUser, Plane, Node, Topic, Reply, Favorite, Notification, Transaction, Vote 
+from RDPSite.models import SiteUser, Plane, Node, Topic, Reply, Favorite, Notification, Transaction, Vote
+from RDPSite.forms.topic import CreateForm, ReplyForm 
+from django.contrib.auth.decorators import login_required
+import hashlib, math
+from django.utils import timezone
+from common import find_mentions
 
 def get_index(request):
     user = request.user
@@ -183,3 +188,167 @@ def get_node_topics(request, slug):
     topics, topic_page = Topic.objects.get_all_topics_by_slug(current_page=current_page, node_slug=slug)
     active_page = 'topic'
     return render_to_response('topic/node_topics.html', locals(), context_instance=RequestContext(request))
+
+@login_required
+def get_create(request, slug=None, errors=None):
+    node = get_object_or_404(Node, slug=slug)
+    user = request.user
+    counter = {
+       'topics': user.topic_author.all().count(),
+       'replies': user.reply_author.all().count(),
+       'favorites': user.fav_user.all().count() 
+    }
+    notification_count = user.notify_user.filter(status=0).count()
+    node_slug = node.slug
+    active_page = 'topic'
+    return render_to_response('topic/create.html', locals(), context_instance=RequestContext(request))
+
+@login_required
+def post_create(request, slug=None):
+    node = get_object_or_404(Node, slug=slug)
+    
+    form = CreateForm(request.POST)
+    if not form.is_valid():
+        return get_create(request, slug=slug, errors=form.errors)
+    
+    user = request.user
+    try:
+        last_created = user.topic_author.all().order_by('-created')[0]
+    except IndexError:
+        last_created = None
+    
+    if last_created:
+        last_created_fingerprint = hashlib.sha1(last_created.title + \
+            last_created.content + str(last_created.node_id)).hexdigest()
+        new_created_fingerprint = hashlib.sha1(form.cleaned_data.get('title') + \
+            form.cleaned_data.get('content') + str(node.id)).hexdigest()
+        if last_created_fingerprint == new_created_fingerprint:
+            errors = {'duplicated_topic': [u'帖子重复提交']}
+            return get_create(request, slug=slug, errors=errors)
+        
+    now = timezone.now()
+    topic = Topic(
+        title = form.cleaned_data.get('title'),
+        content = form.cleaned_data.get('content'),
+        created = now,
+        node = node,
+        author = user,
+        reply_count = 0,
+        last_touched = now,
+    )
+    topic.save()
+    
+    reputation = user.reputation or 0
+    reputation = reputation - 5
+    reputation = 0 if reputation < 0 else reputation
+    SiteUser.objects.filter(pk=user.id).update(reputation=reputation)
+    
+    return redirect('/')
+
+def get_view(request, topic_id, errors=None):
+    try:
+        topic = Topic.objects.get_topic_by_topic_id(topic_id)
+    except Topic.DoesNotExist:
+        raise Http404
+    user = request.user
+    if user.is_authenticated():
+        counter = {
+            'topics': user.topic_author.all().count(),
+            'replies': user.reply_author.all().count(),
+            'favorites': user.fav_user.all().count()
+        }
+        notification_count = user.notify_user.filter(status=0).count()
+        topic_favorited = Favorite.objects.filter(involved_topic=topic, owner_user=user).exists()
+    
+    reply_num = 106
+    reply_count = topic.reply_count
+    reply_last_page = (reply_count // reply_num + (reply_count % reply_num and 1)) or 1
+    try:
+        current_page = int(request.GET.get('p', '1'))
+    except ValueError:
+        current_page = 1
+    
+    replies, reply_page = Reply.objects.ger_all_replies_by_topic_id(topic.id, num=reply_num, current_page=current_page)
+    active_page = 'topic'
+    floor = reply_num * (current_page - 1)
+    
+    topic.reply_count = reply_page.total
+    topic.hits = (topic.hits or 0) + 1
+    topic.save()
+    return render_to_response('topic/view.html', locals(), context_instance=RequestContext(request))
+
+@login_required
+def post_view(request, topic_id):
+    try:
+        topic = Topic.objects.select_related('author').get(pk=topic_id)
+    except Topic.DoesNotExist:
+        raise Http404
+    form = ReplyForm(request.POST)
+    if not form.is_valid():
+        return get_view(request, topic_id, errors=form.errors)
+    
+    user = request.user
+    try:
+        last_reply = topic.reply_set.all().order_by('-created')[0]
+    except IndexError:
+        last_reply = None
+    if last_reply:
+        last_reply_fingerprint = hashlib.sha1(str(topic.id) + str(last_reply.author_id) + last_reply.content).hexdigest()
+        new_reply_fingerprint = hashlib.sha1(str(topic.id) + str(user.id) + form.cleaned_data.get('content')).hexdigest()
+        if last_reply_fingerprint == new_reply_fingerprint:
+            errors = {'duplicated_reply': [u'回复重复提交']}
+            return get_view(request, topic.id, errors=errors)
+    
+    now = timezone.now()
+    reply = Reply(
+        topic = topic,
+        author = user,
+        content = form.cleaned_data.get('content'),
+        created = now,
+    )
+    reply.save()
+    Topic.objects.filter(pk=topic.id).update(last_replied_by=user, last_replied_time=now, last_touched=now)
+    
+    notifications = []
+    if user.id != topic.author.id:
+        notification = Notification(
+            content = form.cleaned_data.get('content'),
+            status = 0,
+            involved_type = 1, #0: mention, 1: reply
+            involved_user = topic.author,
+            involved_topic = topic,
+            trigger_user = user,
+            occurrence_time = now,  
+        )
+        notifications.append(notification)
+    
+    mentions = find_mentions(form.cleaned_data.get('content'))
+    if user.username in mentions:
+        mentions.remove(user.username)
+    if topic.author.username in mentions:
+        mentions.remove(topic.author.username)
+    if mentions:
+        mention_users = SiteUser.objects.filter(username__in=mentions)
+        if mention_users:
+            for mention_user in mention_users:
+                notification = Notification(
+                    content = form.cleaned_data.get('content'),
+                    status = 0,
+                    involved_type = 0,
+                    involved_user = mention_user,
+                    involved_topic = topic,
+                    trigger_user = user,
+                    occurence_time = now,
+                ) 
+                notifications.append(notification)
+    if notifications:
+        Notification.objects.bulk_create(notifications)
+    
+    if user.id != topic.author.id:
+        topic_time_diff = timezone.now() - topic.created
+        reputation = topic.author.reputation or 0
+        reputation = reputation + 2 * math.log(user.reputation or 0 + topic_time_diff.days + 10, 10)
+        SiteUser.objects.filter(pk=topic.author.id).update(reputation=reputation)
+    
+    return redirect('t/%s/#reply%s' % (topic.id, topic.reply_count + 1))
+        
