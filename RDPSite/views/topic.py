@@ -318,7 +318,7 @@ def post_view(request, topic_id):
             involved_user = topic.author,
             involved_topic = topic,
             trigger_user = user,
-            occurrence_time = now,  
+            occurence_time = now,  
         )
         notifications.append(notification)
     

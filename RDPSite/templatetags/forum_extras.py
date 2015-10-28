@@ -12,7 +12,6 @@ from django import template
 from django.utils import timezone
 from markdown import markdown
 
-
 register = template.Library()
 
 

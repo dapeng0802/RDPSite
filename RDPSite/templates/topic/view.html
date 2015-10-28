@@ -132,7 +132,8 @@
             </div>
         </div>
         <div class="ui-content">
-            {{ topic.content|markdown|content_process|safe }}
+            <!-- topic.content|markdown|content_process|safe -->
+            {{ topic.content }}
         </div>
         <div class="ui-footer">
             {% if not topic_favorited %}
@@ -177,7 +178,10 @@
                                 <img src="/static/images/reply.png" alt="" />
                             </span>
                         </div>
-                        <span class="content">{{ reply.content|markdown|content_process|safe }}</span>
+                        <span class="content">
+                        	<!-- reply.content|markdown|content_process|safe -->
+                        	{{ reply.content }}
+                        </span>
                     </div>
                 </div>
             {% endfor %}
