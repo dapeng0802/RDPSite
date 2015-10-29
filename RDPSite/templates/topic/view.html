@@ -133,7 +133,7 @@
         </div>
         <div class="ui-content">
             <!-- topic.content|markdown|content_process|safe -->
-            {{ topic.content }}
+            {{ topic.content|content_process }}
         </div>
         <div class="ui-footer">
             {% if not topic_favorited %}
