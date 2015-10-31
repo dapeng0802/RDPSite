@@ -34,4 +34,6 @@ urlpatterns = patterns('',
     url(r'^node/(.*)/$', common.splitter, {'GET': topic.get_node_topics}),
     url(r'^t/create/(.*)/$', common.splitter, {'GET': topic.get_create, 'POST': topic.post_create}),
     url(r'^t/(\d+)/$', common.splitter, {'GET': topic.get_view, 'POST': topic.post_view}),
+    url(r'^favorite/$', common.splitter, {'GET': topic.get_favorite}),
+    url(r'^unfavorite/$', common.splitter, {'GET': topic.get_cancel_favorite}),
 )

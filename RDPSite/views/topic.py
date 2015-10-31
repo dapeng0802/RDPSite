@@ -6,7 +6,7 @@ from django.template import RequestContext
 from RDPSite.models import SiteUser, Plane, Node, Topic, Reply, Favorite, Notification, Transaction, Vote
 from RDPSite.forms.topic import CreateForm, ReplyForm 
 from django.contrib.auth.decorators import login_required
-import hashlib, math
+import hashlib, math, json
 from django.utils import timezone
 from common import find_mentions
 
@@ -351,4 +351,100 @@ def post_view(request, topic_id):
         SiteUser.objects.filter(pk=topic.author.id).update(reputation=reputation)
     
     return redirect('t/%s/#reply%s' % (topic.id, topic.reply_count + 1))
+
+def get_favorite(request):
+    user = request.user
+    if not user.is_authenticated():
+        return HttpResponse(json.dumps({
+            'success': 0,
+            'message': 'user_not_login'
+        }), content_type='application/json')
         
+    try:
+        topic_id = int(request.GET.get('topic_id'))
+    except (TypeError, ValueError):
+        topic_id = None
+    topic = None
+    if topic_id:
+        try:
+            topic = Topic.objects.select_related('author').get(pk=topic_id)
+        except Topic.DoesNotExist:
+            pass
+    
+    if not (topic_id and topic):
+        return HttpResponse(json.dumps({
+            'success': 0,
+            'message': 'topic_not_exist'
+        }), content_type='application/json')
+    
+    if user.id == topic.author.id:
+        return HttpResponse(json.dumps({
+            'success': 0,
+            'message': 'can_not_favorite_your_topic'
+        }), content_type='application/json')
+    
+    if Favorite.objects.filter(owner_user=user, involved_topic=topic).exists():
+        return HttpResponse(json.dumps({
+            'success': 0,
+            'message': 'already_favorited'
+        }), content_type='application/json')
+    
+    favorite = Favorite(owner_user=user, involved_type=0, involved_topic=topic, created=timezone.now())
+    favorite.save()
+    
+    # 更新话题作者的声誉
+    topic_time_diff = timezone.now() - topic.created
+    reputation = topic.author.reputation or 0
+    reputation = reputation + 2 * math.log((user.reputation or 0) + topic_time_diff.daya + 10, 10)
+    SiteUser.objects.filter(pk=topic.author.id).update(reputation=reputation)
+    
+    return HttpResponse(json.dumps({
+        'success': 1,
+        'message': 'cancel_favorite_success'
+    }), content_type='application/json') 
+
+def get_cancel_favorite(request):
+    user = request.user
+    if not user.is_authenticated():
+        return HttpResponse(json.dumps({
+            'success': 0,
+            'message': 'user_not_login'
+        }), content_type='application/json')
+        
+    try:
+        topic_id = int(request.GET.get('topic_id'))
+    except (TypeError, ValueError):
+        topic_id = None
+    topic = None
+    if topic_id:
+        try:
+            topic = Topic.objects.select_related('author').get(pk=topic_id)
+        except Topic.DoesNotExist:
+            pass
+        
+    if not (topic and topic_id):
+        return HttpResponse(json.dumps({
+            'success': 0,
+            'message': 'topic_not_exist'
+        }), content_type='application/json')
+    
+    try:
+        favorite = Favorite.objects.get(owner_user=user, involved_topic=topic)
+    except Favorite.DoesNotExist:
+        return HttpResponse(json.dumps({
+            'success': 0,
+            'message': 'not_been_favorited'
+        }), content_type='application/json')
+        
+    favorite.delete()
+    
+    # 更新话题作者声誉
+    topic_time_diff = timezone.now() - topic.created
+    reputation = topic.author.reputation or 0
+    reputation = reputation - math.log(user.reputation or 0 + topic_time_diff.days + 10, 15)
+    SiteUser.objects.filter(pk=topic.author.id).update(reputation=reputation)
+    
+    return HttpResponse(json.dumps({
+        'success': 1,
+        'message': 'cancel_favorite_success'
+    }), content_type='application/json')
