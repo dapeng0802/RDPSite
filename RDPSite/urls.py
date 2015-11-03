@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
+from RDPSite.views import notification
 admin.autodiscover()
 admin.site.login = login_required(admin.site.login) # 设置admin登录的页面，settings.LOGIN_URL
 
@@ -36,4 +37,6 @@ urlpatterns = patterns('',
     url(r'^t/(\d+)/$', common.splitter, {'GET': topic.get_view, 'POST': topic.post_view}),
     url(r'^favorite/$', common.splitter, {'GET': topic.get_favorite}),
     url(r'^unfavorite/$', common.splitter, {'GET': topic.get_cancel_favorite}),
+    url(r'^vote/$', common.splitter, {'GET': topic.get_vote}),
+    url(r'^notifications/$', common.splitter, {'GET': notification.get_list}),
 )

@@ -43,7 +43,7 @@ def post_login(request):
     auth.login(request, user)
     
     if user.is_staff:
-        return redirect(request.REQUEST.get('next', '/manage/admin/'))
+        return redirect(request.REQUEST.get('next', '/admin/'))
     
     return redirect(request.REQUEST.get('next', '/'))
 

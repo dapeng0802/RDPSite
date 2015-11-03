@@ -318,7 +318,7 @@ def post_view(request, topic_id):
             involved_user = topic.author,
             involved_topic = topic,
             trigger_user = user,
-            occurence_time = now,  
+            occurrence_time = now,  
         )
         notifications.append(notification)
     
@@ -338,7 +338,7 @@ def post_view(request, topic_id):
                     involved_user = mention_user,
                     involved_topic = topic,
                     trigger_user = user,
-                    occurence_time = now,
+                    occurrence_time = now,
                 ) 
                 notifications.append(notification)
     if notifications:
@@ -349,7 +349,7 @@ def post_view(request, topic_id):
         reputation = topic.author.reputation or 0
         reputation = reputation + 2 * math.log(user.reputation or 0 + topic_time_diff.days + 10, 10)
         SiteUser.objects.filter(pk=topic.author.id).update(reputation=reputation)
-    
+     
     return redirect('t/%s/#reply%s' % (topic.id, topic.reply_count + 1))
 
 def get_favorite(request):
@@ -448,3 +448,56 @@ def get_cancel_favorite(request):
         'success': 1,
         'message': 'cancel_favorite_success'
     }), content_type='application/json')
+    
+def get_vote(request):
+    user = request.user
+    if not user.is_authenticated():
+        return HttpResponse(json.dumps({
+            'success': 0,
+            'message': 'user_not_login'
+        }), content_type='application/json')
+    
+    try:
+        topic_id = int(request.GET.get('topic_id'))
+    except (TypeError, ValueError):
+        topic_id = None
+    topic = None
+    if topic_id:
+        try:
+            topic = Topic.objects.select_related('author').get(pk=topic_id)
+        except Topic.DoesNotExist:
+            pass
+    
+    if not (topic and topic_id):
+        return HttpResponse(json.dumps({
+            'success': 0,
+            'message': 'topic_not_exist'
+        }), content_type='application/json')
+    
+    if user.id == topic.author.id:
+        return HttpResponse(json.dumps({
+            'success': 0,
+            'message': 'can_not_vote_your_topic'
+        }), content_type='application/json')
+    
+    if Vote.objects.filter(trigger_user=user, involved_topic=topic).exists():
+        return HttpResponse(json.dumps({
+            'success': 0,
+            'message': 'already_voted'
+        }), content_type='application/json')
+    
+    vote = Vote(trigger_user=user, involved_type=0, involved_topic=topic, \
+                involved_user=topic.author, status=0, occurrence_time=timezone.now())
+    vote.save()
+    
+    # 更新话题作者声誉
+    topic_time_diff = timezone.now() - topic.created
+    reputation = topic.author.reputation or 0
+    reputation = reputation + 2 * math.log((user.reputation or 0) + topic_time_diff.days + 10, 10)
+    SiteUser.objects.filter(pk=topic.author.id).update(reputation=reputation)
+    
+    return HttpResponse(json.dumps({
+        'success': 1,
+        'message': 'thanks_for_your_vote'
+    }), content_type='application/json')
+    

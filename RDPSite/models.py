@@ -235,7 +235,7 @@ class Notification(models.Model):
     involved_topic = models.ForeignKey(Topic, related_name='notify_topic', null=True, blank=True)
     involved_reply = models.ForeignKey(Reply, related_name='notify_reply', null=True, blank=True)
     trigger_user = models.ForeignKey(SiteUser, related_name='notify_trigger', null=True, blank=True)
-    occurence_time = models.DateTimeField(null=True, blank=True)
+    occurrence_time = models.DateTimeField(null=True, blank=True)
     
     objects = NotificationManager()
 
@@ -250,7 +250,7 @@ class Transaction(models.Model):
     involved_user = models.ForeignKey(SiteUser, related_name='trans_involved', null=True, blank=True)
     involved_topic = models.ForeignKey(Topic, related_name='trans_topic', null=True, blank=True)
     involved_reply = models.ForeignKey(Reply, related_name='trans_reply', null=True, blank=True)
-    occurence_time = models.DateTimeField(null=True, blank=True)
+    occurrence_time = models.DateTimeField(null=True, blank=True)
 
 class Vote(models.Model):
     '''
@@ -262,4 +262,4 @@ class Vote(models.Model):
     involved_topic = models.ForeignKey(Topic, related_name='vote_topic', null=True, blank=True)
     involved_reply = models.ForeignKey(Reply, related_name='vote_reply', null=True, blank=True)
     trigger_user = models.ForeignKey(SiteUser, related_name='vote_trigger', null=True, blank=True)
-    occurence_time = models.DateTimeField(null=True, blank=True)
+    occurrence_time = models.DateTimeField(null=True, blank=True)
