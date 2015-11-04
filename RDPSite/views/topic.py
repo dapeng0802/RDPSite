@@ -350,7 +350,7 @@ def post_view(request, topic_id):
         reputation = reputation + 2 * math.log(user.reputation or 0 + topic_time_diff.days + 10, 10)
         SiteUser.objects.filter(pk=topic.author.id).update(reputation=reputation)
      
-    return redirect('t/%s/#reply%s' % (topic.id, topic.reply_count + 1))
+    return redirect('/t/%s/#reply%s' % (topic.id, topic.reply_count + 1))
 
 def get_favorite(request):
     user = request.user
@@ -500,4 +500,41 @@ def get_vote(request):
         'success': 1,
         'message': 'thanks_for_your_vote'
     }), content_type='application/json')
+
+@login_required
+def get_edit(request, topic_id, errors=None):
+    topic = get_object_or_404(Topic, pk=topic_id)
     
+    user = request.user
+    counter = {
+        'topics': user.topic_author.all().count(),
+        'replies': user.reply_author.all().count(),
+        'favorites': user.fav_user.all().count()
+    }
+    notification_count = user.notify_user.filter(status=0).count()
+    
+    active_page = 'topic'
+    return render_to_response('topic/edit.html', locals(), context_instance=RequestContext(request))
+
+@login_required
+def post_edit(request, topic_id):
+    topic = get_object_or_404(Topic, pk=topic_id)
+    
+    form = CreateForm(request.POST)
+    if not form.is_valid():
+        return get_edit(request, topic_id, errors=form.errors)
+    
+    user = request.user
+    if topic.author.id != user.id:
+        errors = {'invalid_permission': [u'没有权限修改该主题']}
+        return get_edit(request, topic_id, errors=errors)
+    
+    now = timezone.now()
+    Topic.objects.filter(pk=topic_id).update(updated=now, last_touched=now, **form.cleaned_data)
+    
+    reputation = user.reputation or 0
+    reputation = reputation - 2 # 每次修改回复扣除用户威望2点
+    reputation = 0 if reputation < 0 else reputation
+    SiteUser.objects.filter(pk=user.id).update(reputation=reputation)
+    
+    return redirect('/t/%s/' % topic_id)
