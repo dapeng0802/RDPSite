@@ -119,7 +119,7 @@ def get_user_replies(request, uid):
     
     user =request.user
     if user.is_authenticated():
-        notification_count = user.notify_user.filter(status=0).count()
+        notifications_count = user.notify_user.filter(status=0).count()
         
     replies, reply_page = Reply.objects.get_user_all_replies(user_info.id, current_page=current_page)
     active_page = 'topic'
@@ -147,7 +147,7 @@ def get_user_favorites(request, uid):
     
     user = request.user
     if user.is_authenticated():
-        notification_count = user.notify_user.filter(status=0).count()
+        notifications_count = user.notify_user.filter(status=0).count()
         
     favorites, favorite_page = Favorite.objects.get_user_all_favorites(user_info.id, current_page=current_page)
     avtive_page = 'topic'
@@ -161,7 +161,7 @@ def get_members(request):
             'replies': user.reply_author.all().count(),
             'favorites': user.fav_user.all().count()
         }
-        notification_count = user.notify_user.filter(status=0).count()
+        notifications_count = user.notify_user.filter(status=0).count()
     
     members = SiteUser.objects.all().order_by('-id')[:49]
     active_members = SiteUser.objects.all().order_by('-last_login')[:49]
@@ -178,7 +178,7 @@ def get_node_topics(request, slug):
             'replies': user.reply_author.all().count(),
             'favorites': user.fav_user.all().count()
         }
-        notification_count = user.notify_user.filter(status=0).count()
+        notifications_count = user.notify_user.filter(status=0).count()
     
     try:
         current_page = int(request.GET.get('p', '1'))
@@ -198,7 +198,7 @@ def get_create(request, slug=None, errors=None):
        'replies': user.reply_author.all().count(),
        'favorites': user.fav_user.all().count() 
     }
-    notification_count = user.notify_user.filter(status=0).count()
+    notifications_count = user.notify_user.filter(status=0).count()
     node_slug = node.slug
     active_page = 'topic'
     return render_to_response('topic/create.html', locals(), context_instance=RequestContext(request))
@@ -257,7 +257,7 @@ def get_view(request, topic_id, errors=None):
             'replies': user.reply_author.all().count(),
             'favorites': user.fav_user.all().count()
         }
-        notification_count = user.notify_user.filter(status=0).count()
+        notifications_count = user.notify_user.filter(status=0).count()
         topic_favorited = Favorite.objects.filter(involved_topic=topic, owner_user=user).exists()
     
     reply_num = 106
@@ -511,7 +511,7 @@ def get_edit(request, topic_id, errors=None):
         'replies': user.reply_author.all().count(),
         'favorites': user.fav_user.all().count()
     }
-    notification_count = user.notify_user.filter(status=0).count()
+    notifications_count = user.notify_user.filter(status=0).count()
     
     active_page = 'topic'
     return render_to_response('topic/edit.html', locals(), context_instance=RequestContext(request))
@@ -538,3 +538,38 @@ def post_edit(request, topic_id):
     SiteUser.objects.filter(pk=user.id).update(reputation=reputation)
     
     return redirect('/t/%s/' % topic_id)
+
+@login_required
+def get_reply_edit(request, reply_id, errors=None):
+    reply = get_object_or_404(Reply, pk=reply_id)
+    user = request.user
+    counter = {
+        'topics': user.topic_author.all().count(),
+        'replies': user.reply_author.all().count(),
+        'favorites': user.fav_user.all().count()
+    }
+    notifications_count = user.notify_user.filter(status=0).count()
+    active_page = 'topic'
+    return render_to_response('topic/reply_edit.html', locals(), context_instance=RequestContext(request))
+
+@login_required
+def post_reply_edit(request, reply_id):
+    reply = get_object_or_404(Reply, pk=reply_id)
+    
+    form = ReplyForm(request.POST)
+    if not form.is_valid():
+        return get_reply_edit(request, reply_id, errors=form.errors)
+    
+    user = request.user
+    if reply.author.id != user.id:
+        errors = {'invalid_permission': [u'没有权限修改该回复']}
+        return get_reply_edit(request, reply_id, errors=errors)
+    
+    Reply.objects.filter(pk=reply_id).update(updated=timezone.now(), **form.cleaned_data)
+    
+    reputation = user.reputation or 0
+    reputation = reputation - 2 # 每次修改回复扣除用户威望2点
+    reputation = 0 if reputation < 0 else reputation
+    SiteUser.objects.filter(pk=user.id).update(reputation=reputation)
+    
+    return redirect('/t/%s/' % reply.topic_id)

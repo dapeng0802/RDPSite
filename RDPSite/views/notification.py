@@ -15,7 +15,7 @@ def get_list(request):
         'favorites': user.fav_user.all().count()
     }
     
-    notification_count = user.notify_user.filter(status=0).count()
+    notifications_count = user.notify_user.filter(status=0).count()
     notifications, page = Notification.objects.get_user_all_notifications(user.id, current_page=current_page)
     active_page = 'topic'
     

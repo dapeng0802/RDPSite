@@ -40,4 +40,5 @@ urlpatterns = patterns('',
     url(r'^vote/$', common.splitter, {'GET': topic.get_vote}),
     url(r'^notifications/$', common.splitter, {'GET': notification.get_list}),
     url(r'^t/edit/(.*)/$', common.splitter, {'GET': topic.get_edit, 'POST': topic.post_edit}),
+    url(r'^reply/edit/(.*)/$', common.splitter, {'GET': topic.get_reply_edit, 'POST': topic.post_reply_edit}),
 )
